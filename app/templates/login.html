@@ -1,0 +1,17 @@
+<!-- login.html -->
+{% extends "base.html" %}
+{% block content %}
+    <h2>Вход в систему</h2>
+    <form action="{{ url_for('web.login') }}" method="post" novalidate>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn">Войти</button>
+    </form>
+    <p>Нет аккаунта? <a href="{{ url_for('web.register') }}">Зарегистрируйтесь!</a></p>
+{% endblock %}
