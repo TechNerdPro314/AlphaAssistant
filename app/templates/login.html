@@ -1,17 +1,29 @@
-<!-- login.html -->
 {% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
 {% block content %}
-    <h2>Вход в систему</h2>
+<div class="auth-container">
+    <div class="auth-header">
+        <h2>Sign in with email</h2>
+        <p>Make a new doc to bring your words, data, and teams together. For free</p>
+    </div>
+
     <form action="{{ url_for('web.login') }}" method="post" novalidate>
-        <div class="form-group">
-            <label for="email">Email:</label>
+        <div class="form-group" style="text-align: left;">
+            <label for="email">Email</label>
             <input type="email" id="email" name="email" required>
         </div>
-        <div class="form-group">
-            <label for="password">Пароль:</label>
+        <div class="form-group" style="text-align: left;">
+            <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
         </div>
-        <button type="submit" class="btn">Войти</button>
+        <button type="submit" class="btn">Get Started</button>
     </form>
-    <p>Нет аккаунта? <a href="{{ url_for('web.register') }}">Зарегистрируйтесь!</a></p>
+    <div class="auth-footer">
+        <p>Нет аккаунта? <a href="{{ url_for('web.register') }}">Зарегистрируйтесь!</a></p>
+    </div>
+</div>
 {% endblock %}

@@ -1,0 +1,45 @@
+/* app/static/css/auth.css */
+body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+}
+
+.auth-container {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 2.5em;
+    background: rgba(22, 27, 34, 0.6);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(48, 54, 61, 0.5);
+    text-align: center;
+}
+
+.auth-header {
+    margin-bottom: 2em;
+}
+
+.auth-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    color: var(--text-secondary-color);
+}
+
+.auth-footer {
+    margin-top: 1.5em;
+    font-size: 0.9rem;
+}
+
+.auth-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}

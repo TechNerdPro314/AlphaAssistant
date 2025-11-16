@@ -3,55 +3,63 @@ import os
 import requests
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    ContextTypes,
+)
 
 # Загружаем переменные окружения
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Настройка логирования для отладки
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# --- Конфигурация ---
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-# Strip any surrounding quotes from the token
-if TELEGRAM_TOKEN:
-    TELEGRAM_TOKEN = TELEGRAM_TOKEN.strip('"\'')
-    
-API_BASE_URL = "http://127.0.0.1:5000/api/v1" # Адрес нашего локально запущенного API
 
-# In-memory хранилище для сессий пользователей (простое, для примера)
-# В продакшене лучше использовать Redis или другую БД
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+if TELEGRAM_TOKEN:
+    TELEGRAM_TOKEN = TELEGRAM_TOKEN.strip("\"'")
+
+API_BASE_URL = "http://127.0.0.1:5000/api/v1"
+
 user_sessions = {}
 
-# --- Вспомогательные функции ---
 
 async def login_user(email, password):
     """Отправляет запрос на логин в наше API и возвращает JWT токен."""
     try:
-        response = requests.post(f"{API_BASE_URL}/auth/login", json={"email": email, "password": password})
+        response = requests.post(
+            f"{API_BASE_URL}/auth/login", json={"email": email, "password": password}
+        )
         response.raise_for_status()
-        return response.json()['access_token']
+        return response.json()["access_token"]
     except requests.exceptions.RequestException as e:
         logger.error(f"API Login failed: {e}")
         return None
+
 
 async def link_telegram_account(token, telegram_id):
     """Привязывает telegram_id к аккаунту пользователя в нашем API."""
     try:
         headers = {"Authorization": f"Bearer {token}"}
-        response = requests.post(f"{API_BASE_URL}/profile/link_telegram", headers=headers, json={"telegram_id": str(telegram_id)})
+        response = requests.post(
+            f"{API_BASE_URL}/profile/link_telegram",
+            headers=headers,
+            json={"telegram_id": str(telegram_id)},
+        )
         response.raise_for_status()
         return True
     except requests.exceptions.RequestException as e:
         logger.error(f"API Link Telegram failed: {e}")
         return False
 
-# --- Обработчики команд ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start."""
@@ -63,136 +71,150 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "⚠️ В целях безопасности я удалю твое сообщение с паролем сразу после отправки."
     )
 
+
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /login."""
     chat_id = update.effective_chat.id
-    
-    # Сразу удаляем сообщение пользователя с паролем
+
     try:
-        await context.bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
+        await context.bot.delete_message(
+            chat_id=chat_id, message_id=update.message.message_id
+        )
     except Exception as e:
         logger.warning(f"Could not delete login message: {e}")
 
-    # Проверяем формат команды
     if len(context.args) != 2:
-        await context.bot.send_message(chat_id=chat_id, text="Неверный формат. Используй: `/login <email> <password>`")
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="Неверный формат. Используй: `/login <email> <password>`",
+        )
         return
-        
+
     email, password = context.args
     await context.bot.send_message(chat_id=chat_id, text="Проверяю данные...")
 
     token = await login_user(email, password)
     if not token:
-        await context.bot.send_message(chat_id=chat_id, text="❌ Ошибка входа. Проверь свой email и пароль.")
+        await context.bot.send_message(
+            chat_id=chat_id, text="❌ Ошибка входа. Проверь свой email и пароль."
+        )
         return
 
-    # Если логин успешен, привязываем telegram_id
     telegram_id = update.effective_user.id
     if not await link_telegram_account(token, telegram_id):
-        await context.bot.send_message(chat_id=chat_id, text="❌ Не удалось привязать аккаунт Telegram. Попробуй позже.")
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="❌ Не удалось привязать аккаунт Telegram. Попробуй позже.",
+        )
         return
 
-    # Сохраняем токен в наше временное хранилище
     user_sessions[telegram_id] = {"jwt_token": token, "session_id": None}
-    await context.bot.send_message(chat_id=chat_id, text="✅ Вход выполнен успешно! Теперь можешь задавать мне вопросы.")
+    await context.bot.send_message(
+        chat_id=chat_id,
+        text="✅ Вход выполнен успешно! Теперь можешь задавать мне вопросы.",
+    )
+
 
 async def new_chat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начинает новую сессию чата."""
     telegram_id = update.effective_user.id
     if telegram_id in user_sessions:
         user_sessions[telegram_id]["session_id"] = None
-        await update.message.reply_text("Новый диалог начат. Контекст предыдущего сброшен.")
+        await update.message.reply_text(
+            "Новый диалог начат. Контекст предыдущего сброшен."
+        )
     else:
         await update.message.reply_text("Сначала войдите в систему с помощью /login.")
 
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обрабатывает текстовые сообщения от пользователя."""
     telegram_id = update.effective_user.id
     text = update.message.text
 
     # Проверяем, залогинен ли пользователь
     if telegram_id not in user_sessions:
-        await update.message.reply_text("Пожалуйста, сначала войдите в систему с помощью команды /login.")
+        await update.message.reply_text(
+            "Пожалуйста, сначала войдите в систему с помощью команды /login."
+        )
         return
 
-    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
+    await context.bot.send_chat_action(
+        chat_id=update.effective_chat.id, action="typing"
+    )
 
-    # Готовим запрос к нашему API
     session_data = user_sessions[telegram_id]
-    token = session_data['jwt_token']
-    chat_session_id = session_data.get('session_id')
+    token = session_data["jwt_token"]
+    chat_session_id = session_data.get("session_id")
 
     headers = {"Authorization": f"Bearer {token}"}
-    # Формируем данные для отправки, условно включая session_id только если он существует
-    payload = {
-        "message_content": text,
-        "model": "gigachat"  # Теперь используем только GigaChat
-    }
-    
-    # Только добавляем session_id если он существует и не равен None
+    payload = {"message_content": text, "model": "gigachat"}
+
     if chat_session_id is not None:
         payload["session_id"] = chat_session_id
 
     try:
-        response = requests.post(f"{API_BASE_URL}/chat/send_message", headers=headers, json=payload)
-        
-        # Обработка истекшего токена (упрощенная)
+        response = requests.post(
+            f"{API_BASE_URL}/chat/send_message", headers=headers, json=payload
+        )
+
         if response.status_code == 401:
-             await update.message.reply_text("Ваша сессия истекла. Пожалуйста, войдите снова: /login <email> <password>")
-             del user_sessions[telegram_id]
-             return
-        
+            await update.message.reply_text(
+                "Ваша сессия истекла. Пожалуйста, войдите снова: /login <email> <password>"
+            )
+            del user_sessions[telegram_id]
+            return
+
         response.raise_for_status()
-        
+
         data = response.json()
-        assistant_message = data['assistant_message']['content']
-        new_session_id = data['session_id']
-        
-        # Обновляем session_id в нашем хранилище
-        user_sessions[telegram_id]['session_id'] = new_session_id
-        
+        assistant_message = data["assistant_message"]["content"]
+        new_session_id = data["session_id"]
+
+        user_sessions[telegram_id]["session_id"] = new_session_id
+
         await update.message.reply_text(assistant_message)
 
     except requests.exceptions.RequestException as e:
         logger.error(f"API Error during send_message: {e}")
-        await update.message.reply_text("Произошла ошибка при обращении к ассистенту. Попробуйте еще раз.")
+        await update.message.reply_text(
+            "Произошла ошибка при обращении к ассистенту. Попробуйте еще раз."
+        )
 
-# Добавляем глобальную переменную для хранения application
+
 bot_application = None
 
+
 async def stop_bot():
-    """Останавливает бота"""
     global bot_application
     if bot_application:
         await bot_application.stop()
 
+
 def main():
-    """Основная функция для запуска бота."""
     global bot_application
-    
+
     if not TELEGRAM_TOKEN:
         logger.error("Не найден TELEGRAM_BOT_TOKEN! Проверьте файл .env")
         return
 
-    # Log the token length for debugging (don't log the actual token for security)
-    logger.info(f"TELEGRAM_BOT_TOKEN found with length: {len(TELEGRAM_TOKEN) if TELEGRAM_TOKEN else 0}")
+    logger.info(
+        f"TELEGRAM_BOT_TOKEN found with length: {len(TELEGRAM_TOKEN) if TELEGRAM_TOKEN else 0}"
+    )
 
-    # Создаем приложение
     application = Application.builder().token(TELEGRAM_TOKEN).build()
     bot_application = application
 
-    # Добавляем обработчики команд
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("login", login_command))
     application.add_handler(CommandHandler("new", new_chat_command))
-    
-    # Добавляем обработчик для всех текстовых сообщений
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
+
+    application.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
+    )
+
     # Запускаем бота
     logger.info("Starting bot...")
     application.run_polling(stop_signals=[])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

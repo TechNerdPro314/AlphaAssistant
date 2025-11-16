@@ -3,47 +3,43 @@ import requests
 import uuid
 from flask import current_app
 
-# --- GigaChat Client ---
 
 def get_gigachat_token():
-    """
-    Получает временный токен доступа для GigaChat API, используя единый ключ авторизации.
-    """
-    # Получаем единый ключ из конфигурации
-    auth_credentials_base64 = current_app.config['GIGACHAT_AUTH_CREDENTIALS']
-    
-    # Strip any surrounding quotes
+    auth_credentials_base64 = current_app.config["GIGACHAT_AUTH_CREDENTIALS"]
+
     if auth_credentials_base64:
-        auth_credentials_base64 = auth_credentials_base64.strip('"\'')
-    
+        auth_credentials_base64 = auth_credentials_base64.strip("\"'")
+
     if not auth_credentials_base64:
         print("Ошибка конфигурации: GIGACHAT_AUTH_CREDENTIALS не найден в .env")
         return None, "Ошибка: Учетные данные для GigaChat не настроены."
 
     url = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
-    
-    # Формируем заголовки. Теперь аутентификация передается в заголовке 'Authorization'.
-    # Это стандартный способ для OAuth2 Client Credentials.
+
     headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json',
-        'RqUID': str(uuid.uuid4()),
-        'Authorization': f'Basic {auth_credentials_base64}' # Используем наш ключ
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "RqUID": str(uuid.uuid4()),
+        "Authorization": f"Basic {auth_credentials_base64}",
     }
-    
-    payload = {'scope': 'GIGACHAT_API_PERS'}
-    
+
+    payload = {"scope": "GIGACHAT_API_PERS"}
+
     try:
-        # В запросе больше не нужен параметр 'auth', так как все есть в заголовках
-        response = requests.post(url, headers=headers, data=payload, verify=False, timeout=10)
+        response = requests.post(
+            url, headers=headers, data=payload, verify=False, timeout=10
+        )
         response.raise_for_status()
-        
+
         token_data = response.json()
-        return token_data['access_token'], None
+        return token_data["access_token"], None
     except requests.exceptions.RequestException as e:
         error_details = e.response.text if e.response else "No response from server"
         print(f"Ошибка получения токена GigaChat: {e}\nDetails: {error_details}")
-        return None, f"Ошибка аутентификации GigaChat. Проверьте ваш GIGACHAT_AUTH_CREDENTIALS."
+        return (
+            None,
+            f"Ошибка аутентификации GigaChat. Проверьте ваш GIGACHAT_AUTH_CREDENTIALS.",
+        )
 
 
 def get_gigachat_response(system_prompt, dialog_history, user_message):
@@ -54,30 +50,32 @@ def get_gigachat_response(system_prompt, dialog_history, user_message):
 
     url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
     headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': f'Bearer {access_token}'
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer {access_token}",
     }
 
     messages = [{"role": "system", "content": system_prompt}]
-    for line in dialog_history.split('\n'):
-        if ': ' in line:
-            role, content = line.split(': ', 1)
+    for line in dialog_history.split("\n"):
+        if ": " in line:
+            role, content = line.split(": ", 1)
             messages.append({"role": role.lower(), "content": content})
     messages.append({"role": "user", "content": user_message})
-    
+
     payload = {
         "model": "GigaChat:latest",
         "messages": messages,
         "temperature": 0.7,
-        "max_tokens": 1000  # Added max_tokens limit for better control
+        "max_tokens": 1000,
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload, verify=False, timeout=30)
+        response = requests.post(
+            url, headers=headers, json=payload, verify=False, timeout=30
+        )
         response.raise_for_status()
         result = response.json()
-        return result['choices'][0]['message']['content']
+        return result["choices"][0]["message"]["content"]
     except requests.exceptions.RequestException as e:
         error_details = e.response.text if e.response else "No response from server"
         print(f"Ошибка при обращении к GigaChat API: {e}\nDetails: {error_details}")
@@ -85,6 +83,3 @@ def get_gigachat_response(system_prompt, dialog_history, user_message):
     except KeyError as e:
         print(f"Ошибка обработки ответа от GigaChat API: отсутствует ключ {e}")
         return f"Извините, произошла ошибка при обработке ответа от GigaChat."
-
-# --- YandexGPT Client ---
-# Удален, так как теперь используется только GigaChat

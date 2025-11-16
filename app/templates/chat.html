@@ -1,23 +1,25 @@
 {% extends "base.html" %}
-{% block content %}
-<style>
-    #chat-window { height: 400px; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; margin-bottom: 10px; background: #fafafa; }
-    .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 15px; max-width: 70%; word-wrap: break-word; }
-    .user-message { background-color: #007BFF; color: white; margin-left: auto; border-bottom-right-radius: 0; }
-    .assistant-message { background-color: #e9e9eb; color: black; margin-right: auto; border-bottom-left-radius: 0; }
-    #chat-form { display: flex; }
-    #message-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; }
-    #send-button { padding: 10px; }
-</style>
 
-<h2>Чат с ассистентом</h2>
-<div id="chat-window">
-    <div class="message assistant-message">Здравствуйте! Чем могу помочь?</div>
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="chat-header">
+    <h2>Чат с ассистентом</h2>
+    <a href="{{ url_for('web.logout') }}" class="logout-btn">Выйти</a>
 </div>
-<form id="chat-form">
-    <input type="text" id="message-input" placeholder="Введите ваш вопрос..." autocomplete="off" required>
-    <button id="send-button" type="submit" class="btn">Отправить</button>
-</form>
+
+<div id="chat-window">
+    <div class="message assistant-message">Здравствуйте! Чем могу помочь сегодня?</div>
+</div>
+
+<div class="chat-input-area">
+    <form id="chat-form">
+        <input type="text" id="message-input" placeholder="Введите ваш вопрос..." autocomplete="off" required>
+        <button id="send-button" type="submit">Отправить</button>
+    </form>
+</div>
 
 <!-- Передаем токен из Flask в JavaScript -->
 <script>
