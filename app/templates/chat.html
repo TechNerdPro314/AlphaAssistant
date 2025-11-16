@@ -21,9 +21,9 @@
     </form>
 </div>
 
-<!-- Передаем токен из Flask в JavaScript -->
+<!-- Передаем токен из Flask в JavaScript безопасно -->
 <script>
-    const JWT_TOKEN = "{{ jwt_token }}";
+    const JWT_TOKEN = {{ jwt_token | tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}

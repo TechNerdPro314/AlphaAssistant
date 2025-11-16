@@ -1,192 +1,119 @@
-/* app/static/css/chat.css */
-
-/* :root определяет основные переменные цвета для страницы чата */
-:root {
-    --chat-bg: #121212;
-    /* Очень темный фон для окна с сообщениями */
-    --surface-bg: #1C1C1E;
-    /* Фон для хедера и футера (поля ввода) */
-    --message-bubble-bg: #2C2C2E;
-    /* Фон для сообщений пользователя и ассистента */
-    --primary-button-bg: #6A5AEF;
-    /* Фиолетовый цвет для кнопки "Отправить" */
-    --text-primary: #EAEAEB;
-    /* Основной цвет текста */
-    --text-secondary: #8A8A8E;
-    /* Второстепенный цвет (для placeholder) */
-    --border-color: #383838;
-    /* Цвет разделительных линий */
-}
-
-/* Сбрасываем центрирование с body, чтобы чат занимал весь экран */
 body {
+    padding: 0;
     align-items: stretch;
-    justify-content: stretch;
-    background-color: var(--chat-bg);
-    /* Устанавливаем фон для всего body */
 }
 
-/* Контейнер теперь занимает всю высоту и ширину окна */
 .container {
-    max-width: 100%;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
+    max-width: 900px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
+    height: 90vh;
+    overflow: hidden;
 }
 
-/* --- Стили для хедера (верхней части) --- */
 .chat-header {
-    background-color: var(--surface-bg);
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    padding: 20px 30px;
+    border-bottom: 1px solid #eee;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0;
-    /* Хедер не должен сжиматься */
 }
 
 .chat-header h2 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--text-primary);
+    font-size: 24px;
+    color: #333;
 }
 
 .logout-btn {
-    color: var(--text-secondary);
+    padding: 8px 16px;
+    background: #f5f5f5;
+    color: #666;
     text-decoration: none;
-    background-color: var(--message-bubble-bg);
-    padding: 0.4rem 0.8rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    border: none;
-    transition: background-color 0.2s ease;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: background 0.3s;
 }
 
 .logout-btn:hover {
-    background-color: #3a3a3c;
-    color: var(--text-primary);
+    background: #e5e5e5;
 }
 
-/* --- Стили для окна с сообщениями --- */
 #chat-window {
-    flex-grow: 1;
-    /* Окно занимает все доступное пространство */
+    flex: 1;
+    padding: 30px;
     overflow-y: auto;
-    background-color: var(--chat-bg);
-    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 15px;
 }
 
 .message {
-    padding: 10px 16px;
-    border-radius: 20px;
-    /* Более скругленные углы */
     max-width: 70%;
-    word-wrap: break-word;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
     line-height: 1.5;
-    background-color: var(--message-bubble-bg);
-    color: var(--text-primary);
+    word-wrap: break-word;
 }
 
 .user-message {
     align-self: flex-end;
-    /* Сообщение пользователя справа */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
 }
 
 .assistant-message {
     align-self: flex-start;
-    /* Сообщение ассистента слева */
+    background: #f5f5f5;
+    color: #333;
+    border-bottom-left-radius: 4px;
 }
 
-/* --- Стили для поля ввода (футер) --- */
 .chat-input-area {
-    background-color: var(--surface-bg);
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-    flex-shrink: 0;
-    /* Футер не должен сжиматься */
+    padding: 20px 30px;
+    border-top: 1px solid #eee;
 }
 
 #chat-form {
     display: flex;
-    align-items: center;
-    background-color: var(--surface-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 4px;
-    /* Небольшой отступ внутри формы */
+    gap: 10px;
 }
 
 #message-input {
-    flex-grow: 1;
-    padding: 10px;
-    border: none;
-    background: transparent;
-    color: var(--text-primary);
-    font-size: 1rem;
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
 }
 
 #message-input:focus {
     outline: none;
-}
-
-#message-input::placeholder {
-    color: var(--text-secondary);
+    border-color: #667eea;
 }
 
 #send-button {
-    padding: 10px 24px;
-    background-color: var(--primary-button-bg);
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
     border-radius: 8px;
-    cursor: pointer;
+    font-size: 14px;
     font-weight: 500;
-    transition: background-color 0.2s ease;
+    cursor: pointer;
+    transition: transform 0.2s;
 }
 
-#send-button:hover {
-    background-color: #7a6bff;
+#send-button:hover:not(:disabled) {
+    transform: translateY(-2px);
 }
 
-/* Стили для индикатора печати (остаются без изменений, но подхватят новые цвета) */
-.typing-indicator {
-    align-self: flex-start;
-    background-color: var(--message-bubble-bg);
-}
-
-.typing-indicator span {
-    height: 8px;
-    width: 8px;
-    background-color: var(--text-secondary);
-    border-radius: 50%;
-    display: inline-block;
-    animation: bounce 1.4s infinite ease-in-out both;
-}
-
-.typing-indicator span:nth-of-type(2) {
-    animation-delay: -0.16s;
-}
-
-.typing-indicator span:nth-of-type(3) {
-    animation-delay: -0.32s;
-}
-
-@keyframes bounce {
-
-    0%,
-    80%,
-    100% {
-        transform: scale(0);
-    }
-
-    40% {
-        transform: scale(1.0);
-    }
+#send-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
