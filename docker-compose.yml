@@ -1,21 +1,29 @@
-version: '3.8'
-
 services:
   web:
-    # Собирать образ из Dockerfile в текущей директории
     build: .
-    # Имя контейнера для удобства
     container_name: alpha_assistant_web
-    # Пробрасываем порт 5000 с хоста на порт 5000 в контейнере
     ports:
       - "5000:5000"
-    # Подключаем наш .env файл для передачи переменных окружения
     env_file:
       - .env
-    # Подключаем volumes для разработки:
-    # 1. Код будет синхронизироваться между хостом и контейнером
-    # 2. Файл базы данных SQLite будет сохраняться на хосте
     volumes:
       - .:/app
-    # Перезапускать контейнер, если он упал
+      - ./models:/app/models # ДОБАВЬТЕ ЭТО для моделей ИИ
+      - ./data:/app/data # ДОБАВЬТЕ ЭТО для данных ИИ
+    command: gunicorn --bind 0.0.0.0:5000 run:app
+    restart: unless-stopped
+
+  bot:
+    build: .
+    container_name: alpha_assistant_bot
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - ./models:/app/models # ДОБАВЬТЕ ЭТО для моделей ИИ
+      - ./data:/app/data # ДОБАВЬТЕ ЭТО для данных ИИ
+    # ИСПРАВЛЕННЫЙ ВАРИАНТ - используем тот же entrypoint, но с другим command
+    command: [ "python", "bot.py" ]
+    depends_on:
+      - web
     restart: unless-stopped
