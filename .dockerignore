@@ -1,12 +1,21 @@
+# Git
 .git
+.gitignore
+.dockerignore
+
+# Python virtual environment
 .venv
 venv/
+env/
+
+# Python cache
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.idea
-.vscode
-app.db
-migrations/
-.env
+
+# IDE/Editor folders
+.idea/
+.vscode/
+
+# Docker files
+Dockerfile
+docker-compose.yml

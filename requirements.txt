@@ -1,9 +1,17 @@
-Flask==2.3.2
-Flask-SQLAlchemy==3.0.5
-Flask-Migrate==4.0.4
-Flask-JWT-Extended==4.5.2
+# Flask and extensions
+Flask==2.2.2
+Flask-SQLAlchemy==2.5.1
+Flask-Migrate==3.1.0
+Flask-JWT-Extended==4.4.4
 Flask-Login==0.6.2
 Flask-RESTX==1.1.0
-requests==2.31.0
-python-dotenv==1.0.0
-Werkzeug==2.3.7
+python-dotenv==0.21.0
+
+# WSGI Server
+gunicorn==20.1.0
+
+# Other libraries
+requests==2.28.1
+python-telegram-bot==20.0
+Werkzeug==2.2.2
+SQLAlchemy==1.4.44
