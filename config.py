@@ -10,11 +10,15 @@ class Config:
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # YandexGPT credentials
-    YANDEX_FOLDER_ID = os.environ.get('YANDEX_FOLDER_ID')
-    YANDEX_API_KEY = os.environ.get('YANDEX_API_KEY')
-
+    # JWT Configuration
+    JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1 hour instead of default 15 minutes
+    
     # GigaChat credentials
+    # To use GigaChat, you need to:
+    # 1. Register at https://developers.sber.ru/studio
+    # 2. Create a new project and get your API key
+    # 3. Encode your API key in Base64 format
+    # 4. Add it to your .env file as GIGACHAT_AUTH_CREDENTIALS=your_base64_encoded_key
     GIGACHAT_AUTH_CREDENTIALS = os.environ.get('GIGACHAT_AUTH_CREDENTIALS')
     
     TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')

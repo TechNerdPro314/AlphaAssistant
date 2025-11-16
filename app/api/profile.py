@@ -35,7 +35,7 @@ class ProfileResource(Resource):
     @api.response(404, 'Профиль не найден.')
     def get(self):
         """Получить бизнес-профиль текущего пользователя"""
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         profile = BusinessProfile.query.filter_by(user_id=current_user_id).first()
         
         if not profile:
@@ -52,7 +52,7 @@ class ProfileResource(Resource):
     @api.response(200, 'Профиль успешно обновлен.')
     def post(self):
         """Создать или обновить бизнес-профиль текущего пользователя"""
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         data = request.json
         
         profile = BusinessProfile.query.filter_by(user_id=current_user_id).first()
@@ -88,7 +88,7 @@ class LinkTelegram(Resource):
     @api.response(404, 'Пользователь не найден.')
     def post(self):
         """Привязать Telegram ID к текущему пользователю"""
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         user = User.query.get(current_user_id)
         if not user:
             api.abort(404, 'Пользователь не найден.')

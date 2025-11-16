@@ -12,6 +12,10 @@ def get_gigachat_token():
     # Получаем единый ключ из конфигурации
     auth_credentials_base64 = current_app.config['GIGACHAT_AUTH_CREDENTIALS']
     
+    # Strip any surrounding quotes
+    if auth_credentials_base64:
+        auth_credentials_base64 = auth_credentials_base64.strip('"\'')
+    
     if not auth_credentials_base64:
         print("Ошибка конфигурации: GIGACHAT_AUTH_CREDENTIALS не найден в .env")
         return None, "Ошибка: Учетные данные для GigaChat не настроены."
@@ -43,7 +47,7 @@ def get_gigachat_token():
 
 
 def get_gigachat_response(system_prompt, dialog_history, user_message):
-    """Отправляет запрос к GigaChat API и возвращает ответ. (Этот код не меняется)"""
+    """Отправляет запрос к GigaChat API и возвращает ответ."""
     access_token, error = get_gigachat_token()
     if error:
         return error
@@ -65,7 +69,8 @@ def get_gigachat_response(system_prompt, dialog_history, user_message):
     payload = {
         "model": "GigaChat:latest",
         "messages": messages,
-        "temperature": 0.7
+        "temperature": 0.7,
+        "max_tokens": 1000  # Added max_tokens limit for better control
     }
 
     try:
@@ -77,41 +82,9 @@ def get_gigachat_response(system_prompt, dialog_history, user_message):
         error_details = e.response.text if e.response else "No response from server"
         print(f"Ошибка при обращении к GigaChat API: {e}\nDetails: {error_details}")
         return f"Извините, произошла ошибка при обращении к GigaChat."
+    except KeyError as e:
+        print(f"Ошибка обработки ответа от GigaChat API: отсутствует ключ {e}")
+        return f"Извините, произошла ошибка при обработке ответа от GigaChat."
 
 # --- YandexGPT Client ---
-
-def get_yandexgpt_response(system_prompt, dialog_history, user_message):
-    """Отправляет запрос к API YandexGPT и возвращает текстовый ответ."""
-    api_key = current_app.config['YANDEX_API_KEY']
-    folder_id = current_app.config['YANDEX_FOLDER_ID']
-    
-    if not api_key or not folder_id:
-        print("Ошибка конфигурации: Ключи API для YandexGPT не найдены.")
-        return "Ошибка: Ключи API для YandexGPT не настроены в конфигурации."
-
-    url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
-    headers = {"Content-Type": "application/json", "Authorization": f"Api-Key {api_key}"}
-    
-    # YandexGPT предпочитает более простую структуру: системный промпт и один промпт от пользователя,
-    # который содержит всю историю и новый вопрос.
-    full_user_prompt = f"История диалога:\n{dialog_history}\n\nТекущий вопрос: {user_message}"
-    
-    payload = {
-        "modelUri": f"gpt://{folder_id}/yandexgpt-lite",
-        "completionOptions": {"stream": False, "temperature": 0.6, "maxTokens": "2000"},
-        "messages": [
-            {"role": "system", "text": system_prompt},
-            {"role": "user", "text": full_user_prompt}
-        ]
-    }
-    
-    try:
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        result = response.json()
-        return result['result']['alternatives'][0]['message']['text']
-    except requests.exceptions.RequestException as e:
-        print(f"Ошибка при обращении к YandexGPT API: {e}")
-        error_details = e.response.text if e.response else 'No response from server'
-        print(f"Ответ от сервера: {error_details}")
-        return f"Извините, произошла ошибка при обращении к ассистенту. (Детали: {e})"
+# Удален, так как теперь используется только GigaChat

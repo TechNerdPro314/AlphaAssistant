@@ -62,7 +62,8 @@ class UserLogin(Resource):
         user = User.query.filter_by(email=data['email']).first()
 
         if user and user.check_password(data['password']):
-            access_token = create_access_token(identity=user.id)
+            # Convert user ID to string to avoid JWT validation issues
+            access_token = create_access_token(identity=str(user.id))
             return {'access_token': access_token}
         
         return {'message': 'Неверные учетные данные'}, 401
@@ -74,6 +75,7 @@ class UserMe(Resource):
     @api.doc(security='jwt') # Указываем в документации, что нужен JWT
     def get(self):
         """Получение данных о текущем пользователе"""
-        current_user_id = get_jwt_identity() # Получаем id пользователя из токена
+        # Convert string back to integer for database query
+        current_user_id = int(get_jwt_identity()) # Получаем id пользователя из токена
         user = User.query.get(current_user_id)
         return user

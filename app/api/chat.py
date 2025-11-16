@@ -5,22 +5,18 @@ from app.models import BusinessProfile, ChatSession, Message
 from app import db
 from flask_jwt_extended import jwt_required, get_jwt_identity
 # Импортируем наши новые сервисные функции из отдельного модуля
-from app.services.llm_clients import get_yandexgpt_response, get_gigachat_response
+# Убираем импорт get_yandexgpt_response, так как теперь используем только GigaChat
+from app.services.llm_clients import get_gigachat_response
 
 api = Namespace('chat', description='Операции чата с ассистентом')
 
 # --- Модели данных (DTOs) для валидации и документации ---
 
-# Обновляем модель для входящего сообщения: добавляем поле для выбора LLM
+# Обновляем модель для входящего сообщения: убираем поле для выбора LLM
 send_message_model = api.model('SendMessage', {
     'message_content': fields.String(required=True, description='Текст сообщения пользователя'),
-    'session_id': fields.Integer(description='ID текущей сессии чата (если есть, для продолжения диалога)'),
-    'model': fields.String(
-        description='Выбор LLM для ответа (yandexgpt или gigachat)', 
-        enum=['yandexgpt', 'gigachat'], 
-        default='yandexgpt',
-        required=False
-    )
+    'session_id': fields.Integer(description='ID текущей сессии чата (если есть, для продолжения диалога)')
+    # Убираем поле 'model', так как теперь используем только GigaChat
 })
 
 # Модель для одного сообщения в истории
@@ -53,13 +49,14 @@ class SendMessage(Resource):
     @api.expect(send_message_model, validate=True)
     @api.marshal_with(assistant_message_response_model)
     def post(self):
-        """Отправить сообщение ассистенту, выбрав модель, и получить ответ"""
-        current_user_id = get_jwt_identity()
+        """Отправить сообщение ассистенту и получить ответ (только GigaChat)"""
+        # Convert string back to integer for database operations
+        current_user_id = int(get_jwt_identity())
         data = request.json
         user_message_content = data['message_content']
         session_id = data.get('session_id')
-        # Получаем выбор модели из запроса, по умолчанию используем 'yandexgpt'
-        model_choice = data.get('model', 'yandexgpt') 
+        # Убираем выбор модели, теперь всегда используем только GigaChat
+        # model_choice = data.get('model', 'gigachat') 
         
         # Шаг 1: Управление сессией (найти существующую или создать новую)
         if session_id:
@@ -69,6 +66,7 @@ class SendMessage(Resource):
         else:
             session = ChatSession(user_id=current_user_id)
             db.session.add(session)
+            db.session.flush()  # Get the session ID before committing
         
         # Шаг 2: Сохранение сообщения пользователя в БД
         user_message = Message(session_id=session.id, role='user', content=user_message_content)
@@ -88,19 +86,17 @@ class SendMessage(Resource):
 
         dialog_history_text = "\n".join([f"{msg.role}: {msg.content}" for msg in history_messages])
         
-        # Шаг 4: Выбор и вызов соответствующей LLM из сервисного модуля
-        if model_choice == 'gigachat':
-            assistant_response_content = get_gigachat_response(
-                system_prompt=system_text,
-                dialog_history=dialog_history_text,
-                user_message=user_message_content
-            )
-        else: # По умолчанию или если указан 'yandexgpt'
-            assistant_response_content = get_yandexgpt_response(
-                system_prompt=system_text,
-                dialog_history=dialog_history_text,
-                user_message=user_message_content
-            )
+        # Шаг 4: Вызов GigaChat API (теперь без выбора модели)
+        assistant_response_content = get_gigachat_response(
+            system_prompt=system_text,
+            dialog_history=dialog_history_text,
+            user_message=user_message_content
+        )
+        
+        # Проверяем, является ли ответ ошибкой
+        if assistant_response_content.startswith("Извините, произошла ошибка"):
+            # Логируем ошибку, но не прерываем выполнение
+            print(f"LLM Error: {assistant_response_content}")
         
         # Шаг 5: Сохранение ответа ассистента в БД
         assistant_message = Message(session_id=session.id, role='assistant', content=assistant_response_content)
@@ -122,7 +118,8 @@ class SessionHistory(Resource):
     @api.response(404, 'Сессия не найдена.')
     def get(self, session_id):
         """Получить историю сообщений для указанной сессии"""
-        current_user_id = get_jwt_identity()
+        # Convert string back to integer for database operations
+        current_user_id = int(get_jwt_identity())
         session = ChatSession.query.get_or_404(session_id, description=f"Сессия с ID {session_id} не найдена.")
         
         if session.user_id != current_user_id:

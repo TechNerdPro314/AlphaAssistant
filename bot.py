@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 # --- Конфигурация ---
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+# Strip any surrounding quotes from the token
+if TELEGRAM_TOKEN:
+    TELEGRAM_TOKEN = TELEGRAM_TOKEN.strip('"\'')
+    
 API_BASE_URL = "http://127.0.0.1:5000/api/v1" # Адрес нашего локально запущенного API
 
 # In-memory хранилище для сессий пользователей (простое, для примера)
@@ -119,11 +123,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_session_id = session_data.get('session_id')
 
     headers = {"Authorization": f"Bearer {token}"}
+    # Формируем данные для отправки, условно включая session_id только если он существует
     payload = {
         "message_content": text,
-        "session_id": chat_session_id,
-        "model": "yandexgpt"  # или 'gigachat'
+        "model": "gigachat"  # Теперь используем только GigaChat
     }
+    
+    # Только добавляем session_id если он существует и не равен None
+    if chat_session_id is not None:
+        payload["session_id"] = chat_session_id
 
     try:
         response = requests.post(f"{API_BASE_URL}/chat/send_message", headers=headers, json=payload)
@@ -149,15 +157,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"API Error during send_message: {e}")
         await update.message.reply_text("Произошла ошибка при обращении к ассистенту. Попробуйте еще раз.")
 
+# Добавляем глобальную переменную для хранения application
+bot_application = None
+
+async def stop_bot():
+    """Останавливает бота"""
+    global bot_application
+    if bot_application:
+        await bot_application.stop()
 
 def main():
     """Основная функция для запуска бота."""
+    global bot_application
+    
     if not TELEGRAM_TOKEN:
         logger.error("Не найден TELEGRAM_BOT_TOKEN! Проверьте файл .env")
         return
 
+    # Log the token length for debugging (don't log the actual token for security)
+    logger.info(f"TELEGRAM_BOT_TOKEN found with length: {len(TELEGRAM_TOKEN) if TELEGRAM_TOKEN else 0}")
+
     # Создаем приложение
     application = Application.builder().token(TELEGRAM_TOKEN).build()
+    bot_application = application
 
     # Добавляем обработчики команд
     application.add_handler(CommandHandler("start", start_command))
@@ -169,7 +191,7 @@ def main():
     
     # Запускаем бота
     logger.info("Starting bot...")
-    application.run_polling()
+    application.run_polling(stop_signals=[])
 
 
 if __name__ == '__main__':

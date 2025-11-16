@@ -29,17 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
         sendButton.textContent = 'Думаю...';
 
         try {
+            // Формируем данные для отправки
+            // Убираем выбор модели, теперь всегда используем только GigaChat
+            const requestData = {
+                message_content: userMessage
+            };
+            
+            // Только добавляем session_id если он существует
+            if (chatSessionId !== null) {
+                requestData.session_id = chatSessionId;
+            }
+
             const response = await fetch('/api/v1/chat/send_message', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${JWT_TOKEN}` // Используем токен, полученный из шаблона
                 },
-                body: JSON.stringify({
-                    message_content: userMessage,
-                    session_id: chatSessionId,
-                    model: 'gigachat' // Используем GigaChat
-                })
+                body: JSON.stringify(requestData)
             });
 
             if (!response.ok) {
